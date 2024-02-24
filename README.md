@@ -2,7 +2,23 @@
 
 ## Getting Started
 
-- some instructions here.
+run the following commands
+
+- `git clone https://github.com/0xcire/sentinel-vacation-rentals.git && cd sentinel-vacation-rentals`
+- `npm install`
+- `npm run dev`
+
+You can view documentation for the api @ `localhost:3000/docs`
+
+## Assumptions Made
+
+## Built With
+
+- Node / Express
+- TypeScript
+- [tsoa](https://tsoa-community.github.io/docs/)
+  - A framework with integrated OpenAPI compiler, enabling type safety, run time validation, and documentation
+  <!-- add simple persistence with mongo / docker? -->
 
 ## Challenge
 
