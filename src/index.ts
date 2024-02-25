@@ -7,6 +7,9 @@ import { RegisterRoutes } from "../dist/routes";
 import swaggerUi from "swagger-ui-express";
 import docs from "../dist/swagger.json";
 
+import { ValidateError } from "tsoa";
+import type { Request, Response, NextFunction } from "express";
+
 const PORT = process.env.PORT || 3000;
 
 const app = express();
@@ -20,6 +23,29 @@ app.use(compression());
 
 RegisterRoutes(app);
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(docs));
+
+app.use(function notFoundHandler(_req, res: Response) {
+  res.status(404).send({
+    message: "Not Found",
+  });
+});
+
+app.use(function errorHandler(err: unknown, req: Request, res: Response, next: NextFunction): Response | void {
+  if (err instanceof ValidateError) {
+    console.warn(`Caught Validation Error for ${req.path}:`, err.fields);
+    return res.status(422).json({
+      message: "Validation Failed",
+      details: err?.fields,
+    });
+  }
+  if (err instanceof Error) {
+    return res.status(500).json({
+      message: "Internal Server Error",
+    });
+  }
+
+  next();
+});
 
 app.listen(PORT, () => {
   console.log(`listening at http://localhost:${PORT}`);
