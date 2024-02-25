@@ -1,50 +1,92 @@
 import {
   Body,
   Controller,
-  Example,
   Get,
   Path,
   Post,
-  //   Query,
+  Patch,
   Route,
   SuccessResponse,
-
-  //
+  Response,
+  TsoaResponse,
+  Res,
+  Tags,
 } from "tsoa";
 import { RentalsService } from "./rentals.service";
-import type { Rental, NewRental } from "./rentals.model";
+
+import type { Rental, NewRental, RentalDates } from "./rentals.model";
+
+interface ValidateErrorJSON {
+  message: "Validation failed";
+  details: { [name: string]: unknown };
+}
+
+interface ErrorMessage {
+  message: string;
+}
 
 @Route("rentals")
+@Tags("Rentals")
 export class RentalsController extends Controller {
-  @Example<Rental>({
-    id: "52907745-7672-470e-a803-a2f8feb52944",
-    address: "",
-    rate: 2500,
-    rented: [],
-    type: "apartment",
-    isAvailable: true,
-  })
+  /**
+   * @summary Get single rental by ID
+   * @param notFoundResponse Could not find rental
+   */
   @Get("{rentalID}")
   public async getRental(
-    @Path() rentalID: string
-    // @Query() address?: string
+    @Path() rentalID: string,
+    @Res() notFoundResponse: TsoaResponse<404, ErrorMessage>
   ): Promise<Rental> {
-    return new RentalsService().get(rentalID);
+    const rental = await new RentalsService().get(rentalID);
+
+    if (!rental) {
+      return notFoundResponse?.(404, { message: "Rental Not Found" });
+    }
+
+    return rental;
   }
 
+  /**
+   * @summary Get all rentals
+   */
+  @Get()
+  public async getAllRentals(): Promise<Array<Rental>> {
+    const rentals = await new RentalsService().getAll();
+
+    return rentals;
+  }
+
+  /**
+   * @summary Create a rental
+   * @param conflictResponse Rental Already Exists
+   */
+  @Response<ValidateErrorJSON>(422, "Validation Failed")
   @SuccessResponse("201", "created")
   @Post()
   public async createRental(
-    @Body() requestBody: NewRental
-    //
-  ): Promise<void> {
+    @Body() requestBody: NewRental,
+    @Res() conflictResponse: TsoaResponse<409, ErrorMessage>
+  ): Promise<Rental | void> {
+    const rental = new RentalsService().create(requestBody);
+
+    if (!rental) {
+      return conflictResponse(409, { message: "Rental already exists" });
+    }
     this.setStatus(201);
-    new RentalsService().create(requestBody);
     return;
   }
 
-  @Post("{rentalID}/book")
-  public async bookRental() {
+  /**
+   * @summary Book a rental for potentially multiple non overlapping timeframes
+   */
+  @Response<ValidateErrorJSON>(422, "Validation Failed")
+  @Patch("{rentalID}")
+  public async bookRental(
+    @Path() rentalID: string,
+    @Body() requestBody: RentalDates
+    //
+  ) {
+    new RentalsService().bookRental(rentalID, requestBody);
     return "";
   }
 }
