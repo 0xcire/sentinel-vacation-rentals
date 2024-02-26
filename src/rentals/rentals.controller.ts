@@ -14,7 +14,7 @@ import {
 } from "tsoa";
 import { RentalsService } from "./rentals.service";
 
-import type { Rental, NewRental, RentalDates } from "./rentals.model";
+import type { Rental, NewRental, RequestRentalDates } from "./rentals.model";
 
 interface ValidateErrorJSON {
   message: "Validation failed";
@@ -79,14 +79,23 @@ export class RentalsController extends Controller {
   /**
    * @summary Book a rental for potentially multiple non overlapping timeframes
    */
+  @SuccessResponse("200", "Rental Booked")
   @Response<ValidateErrorJSON>(422, "Validation Failed")
   @Patch("{rentalID}")
   public async bookRental(
     @Path() rentalID: string,
-    @Body() requestBody: RentalDates
+    @Body() requestBody: RequestRentalDates,
+    // @Res() notFound: TsoaResponse<404, ErrorMessage>
+    @Res() conflictResponse: TsoaResponse<409, ErrorMessage>
     //
   ) {
-    new RentalsService().bookRental(rentalID, requestBody);
-    return "";
+    const [rental, error] = new RentalsService().bookRental(rentalID, requestBody);
+
+    if (error) {
+      return conflictResponse(409, { message: "Error booking your rental" });
+    }
+
+    this.setStatus(200);
+    return rental;
   }
 }

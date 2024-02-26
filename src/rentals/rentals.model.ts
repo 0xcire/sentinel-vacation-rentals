@@ -1,3 +1,10 @@
+interface RequestRentalPeriod {
+  start: string;
+  end: string;
+}
+
+export type RequestRentalDates = Array<RequestRentalPeriod>;
+
 interface RentalPeriod {
   start: Date;
   end: Date;
