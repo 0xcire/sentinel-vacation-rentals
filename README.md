@@ -4,6 +4,10 @@
 
 run the following commands
 
+<!-- might need to add script to run npx tsoa routes before,
+OR just upload dist folder to github
+ -->
+
 - `git clone https://github.com/0xcire/sentinel-vacation-rentals.git && cd sentinel-vacation-rentals`
 - `npm install`
 - `npm run dev`
