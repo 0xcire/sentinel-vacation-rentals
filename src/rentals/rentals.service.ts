@@ -1,12 +1,18 @@
 import { randomUUID } from "crypto";
-import type { NewRental, Rental, RentalDates } from "./rentals.model";
+// import dayjs from "../lib/day";
+import type { NewRental, Rental, RequestRentalDates } from "./rentals.model";
+import { isBetween } from "./utils";
 
 const rentals: Array<Rental> = [
   {
     id: "1400dd4f-4884-47d4-9d0c-8abc4e66b9af",
     address: "9587 Lexington Ave. Streamwood, IL 60107",
     rate: 1750,
-    rentalDates: [],
+    rentalDates: [
+      { start: new Date("2/25/2024"), end: new Date("2/27/2024") },
+      { start: new Date("3/1/2024"), end: new Date("3/14/2024") },
+      { start: new Date("3/15/2024"), end: new Date("3/25/2024") },
+    ],
     type: "beach",
   },
   {
@@ -44,7 +50,6 @@ const rentals: Array<Rental> = [
     rentalDates: [],
     type: "barn",
   },
-  //
   {
     id: "c53266ef-111b-4565-92f7-dc407ffd3557",
     address: "64 Garfield St. Knoxville, TN 37918",
@@ -99,11 +104,97 @@ export class RentalsService {
     return rental;
   }
 
-  public bookRental(rentalID: string, rentalDates: RentalDates): void {
-    console.log(rentalID, rentalDates);
-    // check overlap in dates
-    // check if any of these dates have overlap with existing rentalDates
-    // update rentalDates
+  // [ ]: need to address poor error handling
+  // check not found ( mainly for type narrow )
+  // [ ]: check dates are valid
+  // [ ]: check dates are not in past
+  // sort request dates
+  // if no possible overlap, set rental
+  // check reques overlap
+  // check existing overlap
+  // set
+  public bookRental(
+    rentalID: string,
+    requestRentdalDates: RequestRentalDates
+  ): [Rental | undefined, string | undefined] {
+    const idx = rentals.map((rental) => rental.id).indexOf(rentalID);
+    const rental = rentals[idx];
+
+    // not found
+    if (!rental) {
+      return [undefined, "404"];
+    }
+
+    const rentalDates = requestRentdalDates
+      .map((requestRentalDate) => {
+        return {
+          start: new Date(requestRentalDate.start),
+          end: new Date(requestRentalDate.end),
+        };
+      })
+      .sort((a, b) => a.start.getTime() - b.start.getTime());
+    console.log(rentalDates);
+
+    // no existing overlaps to check
+    if (rental.rentalDates.length === 0 && rentalDates.length === 1) {
+      rental.rentalDates = rentalDates;
+      return [rental, undefined];
+    }
+
+    // checkRequestOverlap(rentalDates)
+    for (let i = 1; i < rentalDates.length; i++) {
+      const previous = rentalDates[i - 1];
+      const current = rentalDates[i];
+
+      if (previous && current) {
+        // const { start, end } = previous;
+        const { start, end } = current;
+
+        if (isBetween(start, previous.start, previous.end)) {
+          console.log("overlap in request");
+          return [undefined, "409"];
+        }
+
+        if (isBetween(end, previous.start, previous.end)) {
+          console.log("overlap in request");
+          return [undefined, "409"];
+        }
+      }
+    }
+
+    //checkExistingOverlap(existing, request)
+    for (let i = 0; i < rentalDates.length; i++) {
+      const rentalDate = rentalDates[i];
+
+      if (!rentalDate) {
+        return [undefined, "400"];
+      }
+
+      const { start, end } = rentalDate;
+
+      for (let j = 0; j < rental.rentalDates.length; j++) {
+        const existingRentalDate = rental.rentalDates[j];
+        if (!existingRentalDate) {
+          return [undefined, "400"];
+        }
+
+        const { start: exStart, end: exEnd } = existingRentalDate;
+
+        if (isBetween(start, exStart, exEnd)) {
+          console.log("overlap with existing bookings");
+          return [undefined, "409"];
+        }
+
+        if (isBetween(end, exStart, exEnd)) {
+          console.log("overlap with existing bookings");
+          return [undefined, "409"];
+        }
+      }
+    }
+
+    rentalDates.forEach((rentalDate) => rental.rentalDates.push(rentalDate));
+    return [rental, undefined];
+
     // delete any dates in past, however this would probably be something that is triggered from a 'check out' type flow from UI
   }
 

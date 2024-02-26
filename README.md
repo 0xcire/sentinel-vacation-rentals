@@ -16,6 +16,8 @@ You can view documentation for the api @ `localhost:3000/docs`
 
 ## Assumptions Made
 
+- Start date always is before end
+
 ## Built With
 
 - Node / Express
