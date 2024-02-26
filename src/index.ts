@@ -8,6 +8,8 @@ import swaggerUi from "swagger-ui-express";
 import docs from "../dist/swagger.json";
 
 import { ValidateError } from "tsoa";
+import { HTTPError } from "./lib/http-error";
+
 import type { Request, Response, NextFunction } from "express";
 
 const PORT = process.env.PORT || 3000;
@@ -38,6 +40,13 @@ app.use(function errorHandler(err: unknown, req: Request, res: Response, next: N
       details: err?.fields,
     });
   }
+
+  if (err instanceof HTTPError) {
+    return res.status(err.code).json({
+      message: err.message,
+    });
+  }
+
   if (err instanceof Error) {
     return res.status(500).json({
       message: "Internal Server Error",
