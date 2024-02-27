@@ -80,3 +80,7 @@ To run tests:
   - Lake house
   - City apt
   - Farm barn
+
+## Issues
+
+- Couldn't figure out best way of documenting multiple errors for a given code so hopefully my solution is sufficient

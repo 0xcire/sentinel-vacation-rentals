@@ -115,6 +115,13 @@ export class RentalsService {
       });
     }
 
+    if (requestRentalDates.length === 0) {
+      throw new HTTPError({
+        code: "BAD_REQUEST",
+        message: "No Timeframe Specified",
+      });
+    }
+
     const convertedRentalDates = this.convertRequestToDatesOrThrow(requestRentalDates);
 
     const noOverlapPossible = rental.rentalDates.length === 0 && convertedRentalDates.length === 1;
