@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto";
-import { dateIsInThePast, dateIsInvalid, differenceInDays, endIsBeforeStart, isBetween } from "./utils";
+import { dateIsInThePast, dateIsInvalid, differenceInDays, endIsBeforeStart, isBetween } from "../lib/dayjs/utils";
 import { HTTPError } from "../lib/http-error";
 
 import type { NewRental, Rental, RentalDates, RequestRentalDates, BookingInfo } from "./rentals.model";
