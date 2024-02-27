@@ -1,7 +1,8 @@
 import { randomUUID } from "crypto";
-// import dayjs from "../lib/day";
-import type { NewRental, Rental, RequestRentalDates } from "./rentals.model";
-import { isBetween } from "./utils";
+import { dateIsInThePast, dateIsInvalid, differenceInDays, endIsBeforeStart, isBetween } from "./utils";
+import { HTTPError } from "../lib/http-error";
+
+import type { NewRental, Rental, RentalDates, RequestRentalDates, BookingInfo } from "./rentals.model";
 
 const rentals: Array<Rental> = [
   {
@@ -83,7 +84,6 @@ const rentals: Array<Rental> = [
 export class RentalsService {
   public async get(id: string): Promise<Rental | undefined> {
     // add getById(id) logic here from mongo??
-
     const rental = rentals.find((rental) => rental.id === id);
 
     return rental;
@@ -98,104 +98,73 @@ export class RentalsService {
 
     if (existingRental) return undefined;
 
-    const rental = { id: randomUUID(), ...newRental };
+    const rental = { id: randomUUID(), rentalDates: [], ...newRental };
     rentals.push(rental);
 
     return rental;
   }
 
-  // [ ]: need to address poor error handling
-  // check not found ( mainly for type narrow )
-  // [ ]: check dates are valid
-  // [ ]: check dates are not in past
-  // sort request dates
-  // if no possible overlap, set rental
-  // check reques overlap
-  // check existing overlap
-  // set
-  public bookRental(
-    rentalID: string,
-    requestRentdalDates: RequestRentalDates
-  ): [Rental | undefined, string | undefined] {
+  public bookRental(rentalID: string, requestRentalDates: RequestRentalDates): BookingInfo {
     const idx = rentals.map((rental) => rental.id).indexOf(rentalID);
     const rental = rentals[idx];
 
-    // not found
     if (!rental) {
-      return [undefined, "404"];
+      throw new HTTPError({
+        code: "NOT_FOUND",
+        message: "Rental Not Found",
+      });
     }
 
-    const rentalDates = requestRentdalDates
-      .map((requestRentalDate) => {
-        return {
-          start: new Date(requestRentalDate.start),
-          end: new Date(requestRentalDate.end),
-        };
-      })
-      .sort((a, b) => a.start.getTime() - b.start.getTime());
-    console.log(rentalDates);
+    const convertedRentalDates = this.convertRequestToDatesOrThrow(requestRentalDates);
 
-    // no existing overlaps to check
-    if (rental.rentalDates.length === 0 && rentalDates.length === 1) {
-      rental.rentalDates = rentalDates;
-      return [rental, undefined];
+    const noOverlapPossible = rental.rentalDates.length === 0 && convertedRentalDates.length === 1;
+    if (noOverlapPossible) {
+      rental.rentalDates = convertedRentalDates;
+      const bookingTotal = this.calculateBookingTotal(rental.rate, convertedRentalDates);
+
+      return {
+        dates: convertedRentalDates,
+        price: bookingTotal,
+      };
     }
 
-    // checkRequestOverlap(rentalDates)
-    for (let i = 1; i < rentalDates.length; i++) {
-      const previous = rentalDates[i - 1];
-      const current = rentalDates[i];
+    const sortedDates = this.sortConvertedRentalDates(convertedRentalDates);
 
-      if (previous && current) {
-        // const { start, end } = previous;
-        const { start, end } = current;
-
-        if (isBetween(start, previous.start, previous.end)) {
-          console.log("overlap in request");
-          return [undefined, "409"];
-        }
-
-        if (isBetween(end, previous.start, previous.end)) {
-          console.log("overlap in request");
-          return [undefined, "409"];
-        }
-      }
+    if (this.requestRentalDatesHaveOverlap(sortedDates)) {
+      throw new HTTPError({
+        code: "CONFLICT",
+        message: "Booking Request Dates Have Overlap",
+      });
     }
 
-    //checkExistingOverlap(existing, request)
-    for (let i = 0; i < rentalDates.length; i++) {
-      const rentalDate = rentalDates[i];
-
-      if (!rentalDate) {
-        return [undefined, "400"];
-      }
-
-      const { start, end } = rentalDate;
-
-      for (let j = 0; j < rental.rentalDates.length; j++) {
-        const existingRentalDate = rental.rentalDates[j];
-        if (!existingRentalDate) {
-          return [undefined, "400"];
-        }
-
-        const { start: exStart, end: exEnd } = existingRentalDate;
-
-        if (isBetween(start, exStart, exEnd)) {
-          console.log("overlap with existing bookings");
-          return [undefined, "409"];
-        }
-
-        if (isBetween(end, exStart, exEnd)) {
-          console.log("overlap with existing bookings");
-          return [undefined, "409"];
-        }
-      }
+    if (this.requestHasOverlapWithExistingBookings(rental.rentalDates, sortedDates)) {
+      throw new HTTPError({
+        code: "CONFLICT",
+        message: "Booking Requests Have Overlap With Existing Bookings",
+      });
     }
 
-    rentalDates.forEach((rentalDate) => rental.rentalDates.push(rentalDate));
-    return [rental, undefined];
+    sortedDates.forEach((rentalDate) => rental.rentalDates.push(rentalDate));
+    const bookingTotal = this.calculateBookingTotal(rental.rate, sortedDates);
+    return {
+      dates: sortedDates,
+      price: bookingTotal,
+    };
+  }
 
-    // delete any dates in past, however this would probably be something that is triggered from a 'check out' type flow from UI
+  public checkin(rentalID: string): string {
+    // maybe this would trigger email verification and additional instructions to access property
+    return rentalID;
+  }
+
+  public checkout(rentalID: string): string {
+    // would delete associated date range from rental, etc
+    return rentalID;
+  }
+
+  public cancel(rentalID: string): string {
+    // if within certain timeframe, maybe bill a fine, email notifications to owner/user, etc
+    return rentalID;
   }
 
   public delete(rentalID: string): void {
@@ -204,4 +173,101 @@ export class RentalsService {
   }
 
   // public update(rental: P)
+
+  private convertRequestToDatesOrThrow(requestRentalDates: RequestRentalDates) {
+    return requestRentalDates.map(({ start, end }) => {
+      const startDate = new Date(start);
+      const endDate = new Date(end);
+
+      if (dateIsInvalid(startDate) || dateIsInvalid(endDate)) {
+        throw new HTTPError({
+          code: "BAD_REQUEST",
+          message: "Invalid Booking Date",
+        });
+      }
+
+      if (dateIsInThePast(startDate) || dateIsInThePast(endDate)) {
+        throw new HTTPError({
+          code: "BAD_REQUEST",
+          message: "Date In Past",
+        });
+      }
+
+      if (endIsBeforeStart(startDate, endDate)) {
+        throw new HTTPError({
+          code: "BAD_REQUEST",
+          message: "Invalid Date Range",
+        });
+      }
+
+      return {
+        start: startDate,
+        end: endDate,
+      };
+    });
+  }
+
+  private sortConvertedRentalDates(rentalDates: RentalDates): RentalDates {
+    return rentalDates.sort((a, b) => a.start.getTime() - b.start.getTime());
+  }
+
+  private requestRentalDatesHaveOverlap(rentalDates: RentalDates): boolean {
+    for (let i = 1; i < rentalDates.length; i++) {
+      const previous = rentalDates[i - 1];
+      const current = rentalDates[i];
+
+      if (previous && current) {
+        const { start, end } = current;
+
+        if (isBetween(start, previous.start, previous.end)) {
+          return true;
+        }
+
+        if (isBetween(end, previous.start, previous.end)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  private requestHasOverlapWithExistingBookings(existingRentalDates: RentalDates, rentalDates: RentalDates): boolean {
+    for (let i = 0; i < rentalDates.length; i++) {
+      const rentalDate = rentalDates[i];
+
+      if (rentalDate) {
+        const { start, end } = rentalDate;
+
+        for (let j = 0; j < existingRentalDates.length; j++) {
+          const existingRentalDate = existingRentalDates[j];
+
+          if (existingRentalDate) {
+            const { start: exStart, end: exEnd } = existingRentalDate;
+
+            if (isBetween(start, exStart, exEnd)) {
+              return true;
+            }
+
+            if (isBetween(end, exStart, exEnd)) {
+              return true;
+            }
+          }
+        }
+      }
+    }
+    return false;
+  }
+
+  private calculateBookingTotal(rate: number, bookingDates: RentalDates) {
+    let total = 0;
+    for (let i = 0; i < bookingDates.length; i++) {
+      const currentRange = bookingDates[i];
+      if (currentRange) {
+        const { start, end } = currentRange;
+        const currentRangePrice = (differenceInDays(start, end) + 1) * rate;
+        total += currentRangePrice;
+      }
+    }
+    return total;
+  }
 }

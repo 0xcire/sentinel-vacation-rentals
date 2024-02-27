@@ -20,14 +20,18 @@ export interface Rental {
   rentalDates: RentalDates;
 }
 
-// using Omit<Rental, 'id'> util type creates very ugly openAPI schema name
+// using Omit<Rental, 'id' | 'rendalDates'> util type creates very ugly openAPI schema name
 export interface NewRental {
   rate: number;
   address: string;
-  rentalDates: RentalDates;
   type: "beach" | "lake" | "apartment" | "barn";
 }
 
 export interface BookingRental {
   rentedDates: Array<Date>;
+}
+
+export interface BookingInfo {
+  dates: RentalDates;
+  price: number;
 }
