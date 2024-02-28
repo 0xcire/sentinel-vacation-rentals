@@ -1,3 +1,5 @@
+import { randomUUID } from "crypto";
+
 interface RequestRentalPeriod {
   start: string;
   end: string;
@@ -114,3 +116,57 @@ export const rentals: Array<Rental> = [
     type: "beach",
   },
 ];
+
+// ideally using mongo for quick prototype or sql
+export class RentalModel {
+  public get(id: string): Rental | undefined {
+    const rental = rentals.find((rental) => rental.id === id);
+
+    return rental;
+  }
+
+  public getByAddress(address: string): Rental | undefined {
+    const rental = rentals.find((rental) => rental.address === address);
+
+    return rental;
+  }
+
+  public getAll(): Array<Rental> {
+    return rentals;
+  }
+
+  public create(newRental: NewRental): Rental {
+    const rental = { id: randomUUID(), rentalDates: [], ...newRental };
+    rentals.push(rental);
+
+    return rental;
+  }
+
+  // spread operator prone to performace issues if scaling
+  public update(id: string, newData: Partial<Omit<Rental, "id">>): Rental | undefined {
+    const rental = this.get(id);
+    const idx = rentals.findIndex((rental) => rental.id === id);
+
+    if (!rental) return;
+
+    if (Object.keys(newData).length === 1 && newData.rentalDates) {
+      rental.rentalDates = [...rental.rentalDates, ...newData.rentalDates];
+
+      return rental;
+    }
+
+    const updatedRental = {
+      ...rental,
+      ...newData,
+    };
+
+    rentals[idx] = updatedRental;
+
+    return updatedRental;
+  }
+
+  public delete(id: string): void {
+    const idx = rentals.findIndex((rental) => rental.id === id);
+    rentals.splice(idx, 1);
+  }
+}

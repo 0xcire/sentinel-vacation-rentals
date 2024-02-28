@@ -1,5 +1,4 @@
-import { randomUUID } from "crypto";
-import { rentals } from "./rentals.model";
+import { RentalModel } from "./rentals.model";
 import { dateIsInThePast, dateIsInvalid, differenceInDays, endIsBeforeStart, isBetween } from "../lib/dayjs/utils";
 import { HTTPError } from "../lib/http-error";
 
@@ -7,32 +6,36 @@ import type { NewRental, Rental, RentalDates, RequestRentalDates, BookingInfo } 
 
 export class RentalsService {
   public async get(id: string): Promise<Rental | undefined> {
-    // add new RentalModel().getByID(id) logic here from mongo??
-    const rental = rentals.find((rental) => rental.id === id);
+    const rental = new RentalModel().get(id);
 
     return rental;
   }
 
   public async getAll(): Promise<Array<Rental>> {
+    const rentals = new RentalModel().getAll();
+
     return rentals;
   }
 
   public create(newRental: NewRental): Rental | undefined {
-    const existingRental = rentals.find((rental) => rental.address === newRental.address);
+    const rentalModel = new RentalModel();
+    const existing = rentalModel.getByAddress(newRental.address);
 
-    if (existingRental) return undefined;
+    if (existing) {
+      throw new HTTPError({
+        code: "CONFLICT",
+        message: "Rental already exists at this address.",
+      });
+    }
 
-    const rental = { id: randomUUID(), rentalDates: [], ...newRental };
-    // new RentalModel().create(rental)
-    rentals.push(rental);
+    const rental = rentalModel.create(newRental);
 
     return rental;
   }
 
   public bookRental(rentalID: string, requestRentalDates: RequestRentalDates): BookingInfo {
-    // new RentalModel().getByID(rentalID)
-    const idx = rentals.map((rental) => rental.id).indexOf(rentalID);
-    const rental = rentals[idx];
+    const rentalModel = new RentalModel();
+    const rental = rentalModel.get(rentalID);
 
     if (!rental) {
       throw new HTTPError({
@@ -52,8 +55,7 @@ export class RentalsService {
 
     const noOverlapPossible = rental.rentalDates.length === 0 && convertedRentalDates.length === 1;
     if (noOverlapPossible) {
-      // new RentalModel().updateByID(rentalID, convertedRentalDates)
-      rental.rentalDates = convertedRentalDates;
+      rentalModel.update(rentalID, { rentalDates: convertedRentalDates });
       const bookingTotal = this.calculateBookingTotal(rental.rate, convertedRentalDates);
 
       return {
@@ -78,8 +80,8 @@ export class RentalsService {
       });
     }
 
-    // new RentalModel().updateByID(rentalID, convertedRentalDates)
-    sortedDates.forEach((rentalDate) => rental.rentalDates.push(rentalDate));
+    rentalModel.update(rentalID, { rentalDates: sortedDates });
+
     const bookingTotal = this.calculateBookingTotal(rental.rate, sortedDates);
     return {
       dates: sortedDates,
