@@ -12,10 +12,10 @@ export const dateIsInvalid = (date: Date): boolean => {
   return date.toString() === "Invalid Date";
 };
 
-export const endIsBeforeStart = (start: Date, end: Date) => {
+export const endIsBeforeStart = (start: Date, end: Date): boolean => {
   return dayjs(end).isBefore(start);
 };
 
-export const differenceInDays = (start: Date, end: Date) => {
+export const differenceInDays = (start: Date, end: Date): number => {
   return dayjs(end).diff(dayjs(start), "days");
 };

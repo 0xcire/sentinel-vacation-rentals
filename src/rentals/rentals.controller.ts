@@ -61,6 +61,9 @@ export class RentalsController extends Controller {
    * @summary Create a rental
    * @param conflictResponse Rental Already Exists
    */
+  @Response<ErrorMessage>(409, "Rental Exists.", {
+    message: "Rental already exists at this address.",
+  })
   @Response<ValidateErrorJSON>(422, "Validation Failed")
   @SuccessResponse("201", "created")
   @Post()

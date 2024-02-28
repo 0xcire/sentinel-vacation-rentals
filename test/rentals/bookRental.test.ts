@@ -27,9 +27,9 @@ const requestWithEndBeforeStart = [
  * Test data that produces 409 error code
  */
 const requestWithOverlap = [
-  { start: "2024-02-27T20:00:00", end: "2024-03-08T12:00:00" },
+  { start: "2024-03-01T20:00:00", end: "2024-03-08T12:00:00" },
   { start: "2024-06-01T12:00:00", end: "2024-06-14T12:00:00" },
-  { start: "2024-03-01T13:00:00", end: "2024-03-10T01:00:00" },
+  { start: "2024-03-07T13:00:00", end: "2024-03-10T01:00:00" },
 ];
 const requestWithOverlapWithExistingBookings = [
   { start: "2024-03-07T12:00:00", end: "2024-03-10T01:00:00" },
