@@ -16,6 +16,7 @@ import { RentalsService } from "./rentals.service";
 
 import type { Rental, NewRental, RequestRentalDates, BookingInfo } from "./rentals.model";
 
+// from tsoa
 interface ValidateErrorJSON {
   message: "Validation failed";
   details: { [name: string]: unknown };
@@ -96,9 +97,9 @@ export class RentalsController extends Controller {
   ])
   @Patch("{rentalID}")
   public async bookRental(@Path() rentalID: string, @Body() requestBody: RequestRentalDates): Promise<BookingInfo> {
-    const rental = new RentalsService().bookRental(rentalID, requestBody);
+    const bookingInfo = new RentalsService().bookRental(rentalID, requestBody);
 
     this.setStatus(200);
-    return rental;
+    return bookingInfo;
   }
 }

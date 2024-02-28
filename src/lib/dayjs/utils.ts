@@ -5,7 +5,7 @@ export const isBetween = (target: Date, start: Date, end: Date): boolean => {
 };
 
 export const dateIsInThePast = (comparison: Date): boolean => {
-  return dayjs(comparison).isBefore(dayjs(), "day");
+  return dayjs(comparison).isBefore(dayjs());
 };
 
 export const dateIsInvalid = (date: Date): boolean => {
