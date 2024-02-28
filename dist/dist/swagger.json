@@ -1,0 +1,437 @@
+{
+    "openapi": "3.0.0",
+    "components": {
+        "examples": {},
+        "headers": {},
+        "parameters": {},
+        "requestBodies": {},
+        "responses": {},
+        "schemas": {
+            "RentalType": {
+                "type": "string",
+                "enum": [
+                    "beach",
+                    "lake",
+                    "apartment",
+                    "barn"
+                ]
+            },
+            "RentalPeriod": {
+                "properties": {
+                    "start": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "end": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "start",
+                    "end"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
+            "RentalDates": {
+                "items": {
+                    "$ref": "#/components/schemas/RentalPeriod"
+                },
+                "type": "array"
+            },
+            "Rental": {
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "rate": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "address": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "$ref": "#/components/schemas/RentalType"
+                    },
+                    "rentalDates": {
+                        "$ref": "#/components/schemas/RentalDates"
+                    }
+                },
+                "required": [
+                    "id",
+                    "rate",
+                    "address",
+                    "type",
+                    "rentalDates"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
+            "ErrorMessage": {
+                "properties": {
+                    "message": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "message"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
+            "ValidateErrorJSON": {
+                "properties": {
+                    "message": {
+                        "type": "string",
+                        "enum": [
+                            "Validation failed"
+                        ],
+                        "nullable": false
+                    },
+                    "details": {
+                        "properties": {},
+                        "additionalProperties": {},
+                        "type": "object"
+                    }
+                },
+                "required": [
+                    "message",
+                    "details"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
+            "NewRental": {
+                "properties": {
+                    "rate": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "address": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "$ref": "#/components/schemas/RentalType"
+                    }
+                },
+                "required": [
+                    "rate",
+                    "address",
+                    "type"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
+            "BookingInfo": {
+                "properties": {
+                    "dates": {
+                        "$ref": "#/components/schemas/RentalDates"
+                    },
+                    "price": {
+                        "type": "number",
+                        "format": "double"
+                    }
+                },
+                "required": [
+                    "dates",
+                    "price"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
+            "DateString": {
+                "type": "string",
+                "format": "date-time"
+            },
+            "RequestRentalPeriod": {
+                "properties": {
+                    "start": {
+                        "$ref": "#/components/schemas/DateString"
+                    },
+                    "end": {
+                        "$ref": "#/components/schemas/DateString"
+                    }
+                },
+                "required": [
+                    "start",
+                    "end"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
+            "RequestRentalDates": {
+                "items": {
+                    "$ref": "#/components/schemas/RequestRentalPeriod"
+                },
+                "type": "array"
+            }
+        },
+        "securitySchemes": {}
+    },
+    "info": {
+        "title": "sentinel-vacation-rentals",
+        "version": "1.0.0",
+        "license": {
+            "name": "ISC"
+        },
+        "contact": {}
+    },
+    "paths": {
+        "/rentals/{rentalID}": {
+            "get": {
+                "operationId": "GetRental",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Rental"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Could not find rental",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorMessage"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "Get single rental by ID",
+                "tags": [
+                    "Rentals"
+                ],
+                "security": [],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "rentalID",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "1400dd4f-4884-47d4-9d0c-8abc4e66b9af"
+                    }
+                ]
+            },
+            "patch": {
+                "operationId": "BookRental",
+                "responses": {
+                    "200": {
+                        "description": "Rental Booked",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/BookingInfo"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Potential 400 Errors",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "items": {
+                                        "type": "string"
+                                    },
+                                    "type": "array"
+                                },
+                                "examples": {
+                                    "Example 1": {
+                                        "value": [
+                                            "No Timeframe Specified",
+                                            "Invalid Booking Date",
+                                            "Date In Past",
+                                            "Invalid Date Range"
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Rental Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorMessage"
+                                },
+                                "examples": {
+                                    "Example 1": {
+                                        "value": {
+                                            "message": "Rental Not Found"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Potential 409 Errors",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "items": {
+                                        "type": "string"
+                                    },
+                                    "type": "array"
+                                },
+                                "examples": {
+                                    "Example 1": {
+                                        "value": [
+                                            "Booking Request Dates Have Overlap",
+                                            "Booking Requests Have Overlap With Existing Bookings"
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Failed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidateErrorJSON"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "Book a rental for potentially multiple non overlapping timeframes",
+                "tags": [
+                    "Rentals"
+                ],
+                "security": [],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "rentalID",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "1400dd4f-4884-47d4-9d0c-8abc4e66b9af"
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/RequestRentalDates"
+                            },
+                            "example": [
+                                {
+                                    "start": "2024-08-01T12:00:00",
+                                    "end": "2024-08-14T12:00:00"
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/rentals": {
+            "get": {
+                "operationId": "GetAllRentals",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "items": {
+                                        "$ref": "#/components/schemas/Rental"
+                                    },
+                                    "type": "array"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "Get all rentals",
+                "tags": [
+                    "Rentals"
+                ],
+                "security": [],
+                "parameters": []
+            },
+            "post": {
+                "operationId": "CreateRental",
+                "responses": {
+                    "201": {
+                        "description": "created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/Rental"
+                                        },
+                                        {}
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Rental Already Exists",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorMessage"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Failed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidateErrorJSON"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "Create a rental",
+                "tags": [
+                    "Rentals"
+                ],
+                "security": [],
+                "parameters": [],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/NewRental"
+                            },
+                            "example": {
+                                "rate": 500,
+                                "address": "572 Main St, Wakefield, MA 01880",
+                                "type": "apartment"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "servers": [
+        {
+            "url": "http://localhost:3000/",
+            "description": "Local development"
+        }
+    ]
+}

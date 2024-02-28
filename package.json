@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "concurrently \"nodemon\" \"nodemon -x tsoa spec-and-routes\"",
     "build": "tsoa spec-and-routes && tsc",
-    "start": "node build/src/server.js",
+    "start": "node dist/src/index.js",
     "test": "jest",
     "test:watch": "jest --watch"
   },
