@@ -54,6 +54,7 @@ export class RentalsService {
     const convertedRentalDates = this.convertRequestToDatesOrThrow(requestRentalDates);
 
     const noOverlapPossible = rental.rentalDates.length === 0 && convertedRentalDates.length === 1;
+
     if (noOverlapPossible) {
       rentalModel.update(rentalID, { rentalDates: convertedRentalDates });
       const bookingTotal = this.calculateBookingTotal(rental.rate, convertedRentalDates);
@@ -66,14 +67,14 @@ export class RentalsService {
 
     const sortedDates = this.sortConvertedRentalDates(convertedRentalDates);
 
-    if (this.requestRentalDatesHaveOverlap(sortedDates)) {
+    if (this.datesHaveOverlap(sortedDates)) {
       throw new HTTPError({
         code: "CONFLICT",
         message: "Booking Request Dates Have Overlap",
       });
     }
 
-    if (this.requestHasOverlapWithExistingBookings(rental.rentalDates, sortedDates)) {
+    if (this.datesHaveOverlapWithExistingBookings(rental.rentalDates, sortedDates)) {
       throw new HTTPError({
         code: "CONFLICT",
         message: "Booking Requests Have Overlap With Existing Bookings",
@@ -148,7 +149,7 @@ export class RentalsService {
     return rentalDates.sort((a, b) => a.start.getTime() - b.start.getTime());
   }
 
-  private requestRentalDatesHaveOverlap(rentalDates: RentalDates): boolean {
+  private datesHaveOverlap(rentalDates: RentalDates): boolean {
     for (let i = 1; i < rentalDates.length; i++) {
       const previous = rentalDates[i - 1];
       const current = rentalDates[i];
@@ -164,7 +165,7 @@ export class RentalsService {
     return false;
   }
 
-  private requestHasOverlapWithExistingBookings(existingRentalDates: RentalDates, rentalDates: RentalDates): boolean {
+  private datesHaveOverlapWithExistingBookings(existingRentalDates: RentalDates, rentalDates: RentalDates): boolean {
     for (let i = 0; i < rentalDates.length; i++) {
       const rentalDate = rentalDates[i];
 

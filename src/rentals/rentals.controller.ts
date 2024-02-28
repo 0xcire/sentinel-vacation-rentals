@@ -31,6 +31,7 @@ interface ErrorMessage {
 export class RentalsController extends Controller {
   /**
    * @summary Get single rental by ID
+   * @example rentalID "1400dd4f-4884-47d4-9d0c-8abc4e66b9af"
    * @param notFoundResponse Could not find rental
    */
   @Get("{rentalID}")
@@ -59,6 +60,7 @@ export class RentalsController extends Controller {
 
   /**
    * @summary Create a rental
+   * @example requestBody { "rate": 500, "address": "572 Main St, Wakefield, MA 01880", "type": "apartment" }
    * @param conflictResponse Rental Already Exists
    */
   @Response<ErrorMessage>(409, "Rental Exists.", {
@@ -82,6 +84,8 @@ export class RentalsController extends Controller {
 
   /**
    * @summary Book a rental for potentially multiple non overlapping timeframes
+   * @example rentalID "1400dd4f-4884-47d4-9d0c-8abc4e66b9af"
+   * @example requestBody [{ "start": "2024-08-01T12:00:00", "end": "2024-08-14T12:00:00" }]
    */
   @SuccessResponse("200", "Rental Booked")
   @Response<ValidateErrorJSON>(422, "Validation Failed")

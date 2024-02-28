@@ -4,28 +4,28 @@
 
 run the following commands
 
-<!-- might need to add script to run npx tsoa routes before,
-OR just upload dist folder to github
- -->
-
 - `git clone https://github.com/0xcire/sentinel-vacation-rentals.git && cd sentinel-vacation-rentals`
 - `npm install`
-- `npm run dev`
-- OR
-- `npm run build`
 - `npm run start`
 
-You can view documentation for the api @ `localhost:3000/docs`
+You can view documentation for this API and interact with its endpoints @ `localhost:3000/docs`
+
+## Testing
 
 To run tests:
 
 - `npm run test`
 
+## Interacting with the API
+
+- Examples and default values for docs @ `localhost:3000/docs` should be enough for overview of success / error responses
+- Could also pull test data from `test/rentals/bookRental.test.ts`
+
 ## Assumptions Made
 
 - Adressing requirement #1 and part of requirement #2:
 
-  - Making an assumption that client would supply a date picker to set date range, believe this would improve UX as specific check in / checkout date times could be set without room for confusion
+  - Making an assumption that client would supply a date picker to set date/time range, believe this would improve UX as specific check in / checkout date times could be set without room for confusion
 
     - if # of days were to be supplied as a 2nd parameter still, could simply format requestBody before continuing
 
@@ -59,7 +59,6 @@ To run tests:
 - TypeScript
 - [tsoa](https://tsoa-community.github.io/docs/)
   - A framework with integrated OpenAPI compiler, enabling type safety, run time validation, and documentation
-  <!-- add simple persistence with mongo / docker? -->
 
 ## Challenge
 

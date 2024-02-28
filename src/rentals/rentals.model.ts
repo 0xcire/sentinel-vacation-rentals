@@ -1,8 +1,13 @@
 import { randomUUID } from "crypto";
 
+/**
+ * @format date-time
+ */
+type DateString = string;
+
 interface RequestRentalPeriod {
-  start: string;
-  end: string;
+  start: DateString;
+  end: DateString;
 }
 
 export type RequestRentalDates = Array<RequestRentalPeriod>;
