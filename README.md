@@ -50,8 +50,8 @@ To run tests:
   - Assuming that on a client you would be able to filter by type, date, etc and as a result, booking requests would be based on rental ID not its type, and if all homes of a specific type are booked for given search params, proper UI would be displayed to notify use and direct them elsewhere
 
     - This would likely increase UX because ( although not mentioned as a requirement ) a user would likely want to also filter by price, photos, etc and not just submit a booking for the first rental found for a specific type without additional info
-    - An alternative solution when considering the above can be found in `RentalService.requestHasOverlapWithExistingBookings` where an error is thrown if requested bookings have overlap with any existing ones
-      - This would also likely be shown in client, where if the UI to book rental dates was a date picker, the unavailable dates would be disabled ( thinking about something like AirBnb )
+    - An alternative solution when considering the above can be found in the http method, `PATCH rentals/{rentalID}` as opposed to something like `PATCH rentals?type=` & in `RentalService.datesHaveOverlapWithExistingBookings` which simply ensures users can't book a rental when someone else has
+      - these invalid dates would likely also be shown client side in date picker ( thinking about something like AirBnb here )
 
 ## Built With
 
